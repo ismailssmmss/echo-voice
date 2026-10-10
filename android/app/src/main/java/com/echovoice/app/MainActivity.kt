@@ -152,10 +152,11 @@ private fun PageColumn(content: @Composable androidx.compose.foundation.layout.C
 private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
     val context = LocalContext.current
     var apiBaseUrl by remember { mutableStateOf(EchoVoiceApi.getApiBaseUrl(context)) }
-    var email by remember { mutableStateOf("")
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var createAccount by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var checkingBackend by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
