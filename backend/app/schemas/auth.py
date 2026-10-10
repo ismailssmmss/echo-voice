@@ -14,7 +14,7 @@ class LoginRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=1024)
 
 
 class AuthResponse(BaseModel):
@@ -33,3 +33,4 @@ class UserResponse(BaseModel):
     id: int
     email: str
     is_active: bool
+}
