@@ -1,11 +1,11 @@
-val apiBaseUrl = providers.gradleProperty("apiBaseUrl")
-    .orElse("http://10.0.2.2:8000/api/v1")
-    .get()
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+val apiBaseUrl = providers.gradleProperty("apiBaseUrl")
+    .orElse("http://10.0.2.2:8000/api/v1")
+    .get()
 
 android {
     namespace = "com.echovoice.app"
