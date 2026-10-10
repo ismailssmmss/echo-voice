@@ -29,5 +29,5 @@ jobs:
       - name: Run backend tests
         env:
           DATABASE_URL: sqlite:///./ci_echo_voice.db
-          SECRET_KEY: ci-only-not-for-production
+          SECRET_KEY: ci-only-not-for-production-0123456789
         run: pytest -q
