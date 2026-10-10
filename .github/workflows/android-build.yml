@@ -61,7 +61,9 @@ jobs:
           This is a debug-signed engineering preview, not a Google Play production release. Production signing, device verification, deployment hardening, storage/history, account recovery, billing, and Play Store review remain outstanding.
           EOF
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Echo Voice Integration Preview ${RUN_NUMBER}" --notes-file release-notes.md
+            if ! gh release upload "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --clobber; then
+              echo "::warning::Release upload was denied by repository token permissions; the APK remains available as the workflow artifact."
+            fi
+          elif ! gh release create "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Echo Voice Integration Preview ${RUN_NUMBER}" --notes-file release-notes.md; then
+            echo "::warning::GitHub denied creation of a new Release for this workflow token. The APK remains available as the workflow artifact."
           fi
