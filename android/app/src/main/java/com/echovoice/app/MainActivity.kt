@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -81,7 +80,7 @@ fun EchoVoiceApp() {
                         icon = {
                             val icon = when (tab) {
                                 MainTab.HOME -> Icons.Default.Home
-                                MainTab.MODELS -> Icons.Default.Mic
+                                MainTab.MODELS -> Icons.Default.PlayArrow
                                 MainTab.PROJECTS -> Icons.Default.PlayArrow
                                 MainTab.PROFILE -> Icons.Default.AccountCircle
                             }
