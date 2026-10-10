@@ -7,9 +7,9 @@
 - Voice-job endpoints require authentication, validate consent and request fields, and fail closed with HTTP 503 rather than returning a fake queued job while inference and durable processing are unavailable.
 - Voice-model endpoint lists only database-configured models marked active.
 - Admin dashboard no longer displays fabricated user/job/GPU metrics; it reports readiness blockers.
-- Backend CI passed with 17 tests and 2 warnings on commit `3c05c6d58f58d3416f9c910a46baf453fb1f5705`.
+- Latest backend CI passed with 18 tests and 2 warnings on commit `3866d3214256af1d34dcf12974b4d8689154923c`; login password input is capped at 1024 characters.
 - Admin web TypeScript/Vite build passed on the same commit.
-- Android debug APK build passed previously; the Android version is now `0.1.1-preview` (version code 2), which triggers a fresh APK build and preview-release workflow.
+- Android debug APK build passed on commit `82fcd93a151e2576574faffc979206073357cc19`; UI preview release `preview-13` is published with version `0.1.1-preview` (version code 2).
 
 ## Not production complete
 - No real voice cloning or TTS inference is integrated. The worker exposes health endpoints only.
@@ -28,4 +28,4 @@
 6. Configure production signing secrets and publish an Android App Bundle only after the release gates pass.
 
 ## Preview release
-The preview APK is for UI review only. It does not perform voice cloning and must not be treated as a production service. Do not upload sensitive voice recordings or enable payments.
+The latest preview APK is [preview-13](https://github.com/ismailssmmss/echo-voice/releases/tag/preview-13). It is for UI review only, does not perform voice cloning, and must not be treated as a production service. Do not upload sensitive voice recordings or enable payments.
