@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -27,7 +27,8 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def create_db() -> None:
+    # Import the module to register all mapped classes before create_all.
+    import app.db.models  # noqa: F401
     from app.db.base import Base
-    from app.db.models import *  # noqa: F401,F403
 
     Base.metadata.create_all(bind=engine)
