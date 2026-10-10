@@ -15,8 +15,8 @@ android {
         applicationId = "com.echovoice.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-preview"
+        versionCode = 3
+        versionName = "0.2.1-preview"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         manifestPlaceholders["usesCleartextTraffic"] = apiBaseUrl.startsWith("http://").toString()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
