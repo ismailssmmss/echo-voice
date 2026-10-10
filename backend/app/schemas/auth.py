@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class RegisterRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8, max_length=1024)
 
 
 class LoginRequest(BaseModel):
