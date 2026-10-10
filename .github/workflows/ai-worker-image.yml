@@ -75,7 +75,7 @@ jobs:
           grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-headers.txt"
           grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers.txt"
           test -s "$RUNNER_TEMP/generated.wav"
-          ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$RUNNER_TEMP/generated.wav"
+          python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"Generated WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated.wav"
       - name: Show worker logs if model loading or inference fails
         if: failure()
         run: docker logs echo-voice-worker || true
