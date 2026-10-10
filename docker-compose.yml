@@ -1,49 +1,49 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: echo-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: echo_voice
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-echo_voice}
+      POSTGRES_USER: ${POSTGRES_USER:-echo_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a local POSTGRES_PASSWORD in .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d echo_voice"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: echo-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: echo-backend
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/echo_voice
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-echo_dev}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-echo_voice}
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend:/app
 
@@ -51,14 +51,14 @@ services:
     build:
       context: ./ai-worker
       dockerfile: Dockerfile
-    container_name: echo-ai-worker
     restart: unless-stopped
     env_file:
       - .env
     environment:
       REDIS_URL: redis://redis:6379/0
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     volumes:
       - ./ai-worker:/app
 
@@ -66,10 +66,9 @@ services:
     build:
       context: ./admin-web
       dockerfile: Dockerfile
-    container_name: echo-admin-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       VITE_API_BASE_URL: http://localhost:8000
     depends_on:
