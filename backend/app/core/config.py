@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Internal service-to-service connection for the isolated voice inference worker.
     worker_url: str = "http://ai-worker:8001"
     worker_api_token: str = ""
-    worker_timeout_seconds: int = 900
+    worker_timeout_seconds: int = 1800
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
