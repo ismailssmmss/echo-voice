@@ -31,7 +31,7 @@ def list_voice_models(db: Session = Depends(get_db)) -> dict[str, list[dict[str,
 
 @router.get("/{model_id}")
 def get_voice_model(model_id: int, db: Session = Depends(get_db)) -> dict[str, str | int | float | None]:
-    model = db.query(VoiceModel).filter(VoiceModel.id == model_id).first()
+    model = db.query(VoiceModel).filter(VoiceModel.id == model_id, VoiceModel.status == "active").first()
     if not model:
         raise HTTPException(status_code=404, detail="Voice model not found.")
 
