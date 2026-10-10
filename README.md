@@ -8,6 +8,22 @@ The AI worker is integrated with **SILMA TTS v1** for zero-shot voice cloning an
 
 The authenticated API endpoint is `POST /api/v1/voice-jobs/clone` (multipart form). It requires a bearer access token and explicit voice-owner consent. The reference text must match the first eight seconds of the reference recording. Uploads are limited to 25 MB and 3–120 seconds; output text is limited to 5000 characters. Other languages are rejected until a tested engine for them is added.
 
+## Windows quick start
+
+Install and start Docker Desktop, then run PowerShell from the repository folder:
+
+```powershell
+.\start-echo-voice.ps1
+```
+
+For a phone connected to the same trusted private Wi-Fi, use:
+
+```powershell
+.\start-echo-voice.ps1 -AllowLan
+```
+
+The script creates a local `.env` if absent, replaces placeholder development secrets with random local secrets, starts the Docker Compose stack, and waits for the backend health endpoint. LAN mode binds the backend API on all local interfaces; use it only on a trusted private network and never port-forward it to the public internet.
+
 ## Run the real engine locally
 
 The APK is the Android client; the SILMA model runs in the separate AI-worker container. The app cannot generate speech until the backend and worker are running. This is the key distinction between the APK and a complete deployment.
