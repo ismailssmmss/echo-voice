@@ -106,9 +106,52 @@ jobs:
           grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-headers-mixed.txt"
           grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers-mixed.txt"
           python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"Generated mixed WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated-mixed.wav"
+      - name: Install backend for real end-to-end integration test
+        run: python -m pip install -r backend/requirements.txt
+      - name: Start backend connected to the live inference worker
+        working-directory: backend
+        env:
+          DATABASE_URL: sqlite:///./echo_voice_e2e.db
+          SECRET_KEY: echo-voice-ci-secret-not-for-production-0123456789
+          WORKER_URL: http://127.0.0.1:8001
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+          CORS_ORIGINS: http://localhost:3000
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/backend.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health; then exit 0; fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/backend.log"
+          exit 1
+      - name: Verify authenticated backend-to-SILMA synthesis end to end
+        env:
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+        run: |
+          set -euo pipefail
+          AUTH_RESPONSE=$(curl --fail-with-body -sS \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"silma-e2e@example.com","password":"echo-voice-ci-pass-0123"}' \
+            http://127.0.0.1:8000/api/v1/auth/register)
+          ACCESS_TOKEN=$(python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])' <<< "$AUTH_RESPONSE")
+          curl --fail-with-body --max-time 2400 --dump-header "$RUNNER_TEMP/response-e2e-headers.txt" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -F "reference_audio=@$RUNNER_TEMP/reference.wav;type=audio/wav" \
+            -F 'reference_text=ويدقق النظر في القرآن الكريم وسائر الكتب السماوية ويتبع مسالك الرسل العظام عليهم الصلاة والسلام.' \
+            -F 'text=اختبار كامل من تطبيق إيكو فويس عبر الواجهة والخادم ومحرك استنساخ الصوت.' \
+            -F 'language=ar' \
+            -F 'consent_confirmed=true' \
+            -F 'speed=1.0' \
+            http://127.0.0.1:8000/api/v1/voice-jobs/clone --output "$RUNNER_TEMP/generated-via-api.wav"
+          grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-e2e-headers.txt"
+          grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-e2e-headers.txt"
+          python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"End-to-end API generated WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated-via-api.wav"
       - name: Show worker logs if model loading or inference fails
         if: failure()
-        run: docker logs echo-voice-worker || true
+        run: |
+          docker logs echo-voice-worker || true
+          cat "$RUNNER_TEMP/backend.log" 2>/dev/null || true
       - name: Remove worker container
         if: always()
         run: docker rm -f echo-voice-worker || true
