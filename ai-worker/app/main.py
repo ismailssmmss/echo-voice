@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 from typing import Annotated
 
@@ -27,6 +28,7 @@ MAX_UPLOAD_BYTES = int(os.getenv("MAX_REFERENCE_AUDIO_BYTES", str(25 * 1024 * 10
 MAX_REFERENCE_SECONDS = 120.0
 REFERENCE_CLIP_SECONDS = 8.0
 ALLOWED_SUFFIXES = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".webm"}
+INFERENCE_SLOT = threading.BoundedSemaphore(value=1)
 
 
 def _check_worker_token(candidate: str | None) -> None:
@@ -141,15 +143,24 @@ async def clone_voice(
         if _probe_duration(reference_path) < 2.5:
             raise HTTPException(status_code=422, detail="The reference clip is too short after audio cleanup.")
 
-        await run_in_threadpool(
-            runtime.generate,
-            reference_path,
-            reference_text.strip(),
-            text.strip(),
-            language,
-            output_path,
-            speed,
-        )
+        if not INFERENCE_SLOT.acquire(blocking=False):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="The voice engine is currently generating another file. Retry after that request finishes.",
+                headers={"Retry-After": "30"},
+            )
+        try:
+            await run_in_threadpool(
+                runtime.generate,
+                reference_path,
+                reference_text.strip(),
+                text.strip(),
+                language,
+                output_path,
+                speed,
+            )
+        finally:
+            INFERENCE_SLOT.release()
 
         # Embed an audible-data-neutral disclosure in WAV metadata and add
         # response headers for clients that preserve file metadata.
