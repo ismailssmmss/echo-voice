@@ -13,13 +13,13 @@ The authenticated API endpoint is `POST /api/v1/voice-jobs/clone` (multipart for
 Install and start Docker Desktop, then run PowerShell from the repository folder:
 
 ```powershell
-.\start-echo-voice.ps1
+powershell -ExecutionPolicy Bypass -File .\start-echo-voice.ps1
 ```
 
 For a phone connected to the same trusted private Wi-Fi, use:
 
 ```powershell
-.\start-echo-voice.ps1 -AllowLan
+powershell -ExecutionPolicy Bypass -File .\start-echo-voice.ps1 -AllowLan
 ```
 
 The script creates a local `.env` if absent, replaces placeholder development secrets with random local secrets, starts the Docker Compose stack, and waits for the backend health endpoint. LAN mode binds the backend API on all local interfaces; use it only on a trusted private network and never port-forward it to the public internet.
