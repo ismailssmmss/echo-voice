@@ -39,6 +39,14 @@ def test_register_login_and_me() -> None:
     assert me_response.json()["email"] == "user@example.com"
 
 
+def test_login_rejects_oversized_password_before_hash_verification() -> None:
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "user@example.com", "password": "x" * 1025},
+    )
+    assert response.status_code == 422
+
+
 def test_me_requires_authentication() -> None:
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
