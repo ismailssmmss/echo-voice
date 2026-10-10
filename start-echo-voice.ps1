@@ -126,7 +126,7 @@ if ($AllowLan) {
     Write-Host "Allow TCP port 8000 in Windows Firewall only for your trusted private network if needed."
 }
 else {
-    Write-Host "For a physical phone on trusted Wi-Fi, rerun with: .\start-echo-voice.ps1 -AllowLan"
+    Write-Host "For a physical phone on trusted Wi-Fi, rerun with: powershell -ExecutionPolicy Bypass -File .\start-echo-voice.ps1 -AllowLan"
 }
 
 Write-Host ""
