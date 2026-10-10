@@ -1,16 +1,16 @@
 # Security and release gates
 
-Before production or public testing:
+Before production or public beta:
 
-- Replace wildcard CORS and development credentials; keep secrets in a managed secret store.
-- Add authentication to all private routes, server-side authorization/ownership checks, rate limiting, and abuse monitoring.
-- Record timestamped consent statements and link them to user, voice model, and source asset.
-- Require private storage, short-lived signed URLs, size/type limits, malware/content validation where appropriate, and lifecycle deletion.
-- Implement idempotent credits and billing verification server-side; never trust client-supplied balances or subscription states.
-- Restrict admin access with strong authentication, role-based permissions, and audit logs.
-- Provide account/data deletion and retention controls.
-- Run dependency, secret, container, API authorization, and load scans.
-- Confirm Google Play Billing, AdMob, privacy disclosures, and applicable legal requirements against current official policies before release.
-- Complete voice consent/abuse tests and test on physical Android devices.
+- Replace development secrets with a secret manager; fail startup when required production secrets are missing.
+- Enforce authentication, server-side resource ownership, rate limiting, and abuse monitoring on private APIs.
+- Record timestamped consent linked to user, source asset, and model.
+- Use private object storage and short-lived signed URLs; enforce upload size/type limits and retention/deletion lifecycle.
+- Make credit accounting idempotent and verify Google Play purchases server-side; never trust client balances or subscription status.
+- Protect admin access with strong authentication, role-based permissions, and audit logging.
+- Offer account and data deletion/retention controls.
+- Run dependency, secret, container, API-authorization, and load testing.
+- Confirm current Google Play Billing, AdMob, privacy disclosure, and applicable legal requirements before release.
+- Complete voice consent/abuse tests and physical-device tests.
 
-The current scaffold has not passed these gates.
+The current code has not passed these gates.
