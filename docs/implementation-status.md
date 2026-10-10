@@ -1,31 +1,24 @@
 # Echo Voice implementation status
 
-## Implemented and verified in repository
-- FastAPI health and readiness endpoints, request-scoped database sessions, and configurable CORS origin allowlist.
-- Email/password registration and login with signed bearer access tokens; token issuance requires a configured `SECRET_KEY` of at least 32 characters.
-- `/auth/me` and project endpoints derive identity from the verified bearer token; callers cannot select another user's ID to access projects.
-- Voice-job endpoints require authentication, validate consent and request fields, and fail closed with HTTP 503 rather than returning a fake queued job while inference and durable processing are unavailable.
-- Voice-model endpoint lists only database-configured models marked active.
-- Admin dashboard no longer displays fabricated user/job/GPU metrics; it reports readiness blockers.
-- Latest backend CI passed with 18 tests and 2 warnings on commit `3866d3214256af1d34dcf12974b4d8689154923c`; login password input is capped at 1024 characters.
-- Admin web TypeScript/Vite build passed on the same commit.
-- Android debug APK build passed on commit `82fcd93a151e2576574faffc979206073357cc19`; UI preview release `preview-13` is published with version `0.1.1-preview` (version code 2).
+## Implemented
+- FastAPI registration/login issues signed bearer tokens; protected project routes enforce user ownership.
+- Backend now proxies authenticated `POST /api/v1/voice-jobs/clone` requests to a private worker using a service token and records each consent acknowledgement in the database.
+- The inference worker now loads SILMA TTS v1 lazily, performs real zero-shot voice cloning/synthesis for Arabic, English, or mixed Arabic-English text, normalizes reference audio with FFmpeg, labels output audio as AI-generated, and deletes temporary files.
+- Model weights and vocoder are downloaded from the upstream model repositories on first inference and cached in the Docker `model_cache` volume.
+- Upload size/duration, text length, playback speed, language, authentication, worker service token, and voice-owner consent are validated.
+- Fast API tests are defined for worker request validation and for the backend-to-worker forwarding path; the worker tests use a stub runtime and do not download model weights.
+- Android version `0.1.1-preview` UI preview is available in GitHub Releases.
 
-## Not production complete
-- No real voice cloning or TTS inference is integrated. The worker exposes health endpoints only.
-- Voice assets are not uploaded to private object storage; audio ownership, duration validation, retention and deletion are not wired end-to-end.
-- Voice jobs are not persisted, queued, or executed.
-- Google OAuth, account recovery, rate limits, abuse reporting workflows, production admin RBAC, Google Play Billing verification, and AdMob are not complete.
-- Model license and voice-quality/performance benchmarks have not been run.
-- The APK is debug-signed for preview. No production signing configuration, Android device matrix, privacy review, or Play Store submission is complete.
+## Important limits
+- SILMA TTS v1 supports Arabic, English, and mixed Arabic/English text; other languages return validation errors.
+- A real inference deployment must still be built and run with sufficient disk and memory. This repository does not prove audio quality, latency, or accuracy on production hardware merely from unit tests.
+- The generated WAV is returned synchronously; persistent async jobs, retry/cancel, long-term audio storage and history are not implemented. The backend records consent, but does not retain uploaded audio.
+- Android client integration and end-to-end device validation, production signing, formal privacy/legal review, and Google Play publication still require verification.
+- Account recovery and verification, API rate limits, production admin RBAC, server-verified billing, and ad integration are still incomplete.
 
-## Next release gates
-1. Integrate and benchmark a legally approved voice model behind an isolated worker, including model download/license tracking and inference timeout/resource limits.
-2. Implement private object storage, signed upload/download URLs, audio consent records, deletion lifecycle and malware/file validation.
-3. Implement durable job states, queue dispatch, retries, cancellation and user-scoped job reads.
-4. Add API rate limiting, account recovery, moderation reports, audit logs and authenticated admin roles.
-5. Verify billing server-side, complete privacy disclosures and test on real Android devices.
-6. Configure production signing secrets and publish an Android App Bundle only after the release gates pass.
-
-## Preview release
-The latest preview APK is [preview-13](https://github.com/ismailssmmss/echo-voice/releases/tag/preview-13). It is for UI review only, does not perform voice cloning, and must not be treated as a production service. Do not upload sensitive voice recordings or enable payments.
+## Release gates
+1. Pass backend and worker CI and build the actual AI-worker image.
+2. Run a real Arabic and English sample end-to-end with model weights on the intended deployment hardware and record the output quality, latency, memory, and model-cache size.
+3. Test the Android build against a reachable HTTPS API on a physical device, including export/playback, network errors, and long-running generation.
+4. Configure production secrets, HTTPS ingress, rate limits, admin access controls, retention/deletion policy, privacy disclosures, and applicable terms.
+5. Configure release signing and submit an Android App Bundle to Google Play only after the above pass.
