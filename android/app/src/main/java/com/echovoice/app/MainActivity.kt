@@ -55,11 +55,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.echovoice.app.ui.theme.EchoAccent
+import com.echovoice.app.ui.theme.EchoCard
+import com.echovoice.app.ui.theme.EchoDark
+import com.echovoice.app.ui.theme.EchoMuted
+import com.echovoice.app.ui.theme.EchoSurface
+import com.echovoice.app.ui.theme.EchoText
+import com.echovoice.app.ui.theme.EchoVoiceTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
