@@ -6,7 +6,7 @@ The repository has basic email/password registration and login with signed beare
 
 The backend and private AI worker are now integrated with SILMA TTS v1 for reference-conditioned voice cloning and speech synthesis in Arabic, English, and mixed Arabic/English. The API requires a bearer token and an explicit voice-ownership/permission attestation. The worker validates and normalizes audio, rejects concurrent heavy inference, tags WAV metadata as AI-generated, and removes temporary reference/output files and SILMA's per-reference preprocessing cache after each attempt.
 
-The worker image builds and its fast API tests pass. The full model-loading and real WAV-generation smoke test must pass before treating the voice engine as deployment-verified. Check [GitHub Actions](https://github.com/ismailssmmss/echo-voice/actions) for that result. This does not establish production voice quality or latency.
+The worker image built and the full-model CPU smoke test succeeded in [GitHub Actions run 38060171738](https://github.com/ismailssmmss/echo-voice/actions/runs/38060171738): SILMA generated a non-empty Arabic WAV (4.51 seconds). This verifies the inference code path, not production audio quality, English quality, concurrency, performance, or behavior on the intended hosting hardware.
 
 ## Required before production or public beta
 
