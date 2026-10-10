@@ -6,7 +6,7 @@ The repository has baseline email/password registration/login with signed bearer
 
 SILMA TTS v1 is integrated into the authenticated API and private worker for Arabic, English, and mixed Arabic-English voice cloning. The worker checks the service token and user consent, normalizes the reference clip, returns WAV audio tagged as AI-generated, rejects overlapping inference requests, and removes temporary source/output files and SILMA's per-reference cache entry after inference.
 
-The Docker image build, worker API tests, and **real Arabic model-inference smoke test have passed** in [GitHub Actions](https://github.com/ismailssmmss/echo-voice/actions/runs/38060171738). The generated output was a valid 4.51-second WAV. A later workflow now additionally tests English and mixed Arabic-English. That smoke test validates model loading, a real request, AI-generated response headers and a readable non-empty WAV file. It does not establish production voice similarity, English quality, throughput or latency on the eventual hosting hardware.
+The Docker image build and worker API tests pass. The [full-model multilingual smoke run](https://github.com/ismailssmmss/echo-voice/actions/runs/38060638187) generated valid WAV outputs for Arabic (4.54 seconds), English (4.49 seconds), and mixed Arabic-English (4.98 seconds). The [authenticated end-to-end API-to-worker test](https://github.com/ismailssmmss/echo-voice/actions/runs/38060829742) also passed and returned a valid 5.93-second WAV through the authenticated backend route. These checks verify the actual inference path and disclosure headers, but they do not establish production voice similarity, throughput, or latency on the eventual hosting hardware.
 
 ## Required before production or public beta
 
