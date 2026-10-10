@@ -54,10 +54,6 @@ jobs:
           exit 1
       - name: Download official SILMA reference sample
         run: curl --fail --location --retry 3 --output "$RUNNER_TEMP/reference.wav" https://raw.githubusercontent.com/SILMA-AI/silma-tts/main/src/silma_tts/infer/ref_audio_samples/ar.ref.24k.wav
-      - name: Install FFmpeg for output validation
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
       - name: Run real Arabic voice-cloning inference
         env:
           WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
@@ -76,6 +72,40 @@ jobs:
           grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers.txt"
           test -s "$RUNNER_TEMP/generated.wav"
           python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"Generated WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated.wav"
+      - name: Run real English voice-cloning inference
+        env:
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --max-time 2400 --dump-header "$RUNNER_TEMP/response-headers-en.txt" \
+            -H "X-Worker-Token: $WORKER_API_TOKEN" \
+            -F "reference_audio=@$RUNNER_TEMP/reference.wav;type=audio/wav" \
+            -F 'reference_text=ويدقق النظر في القرآن الكريم وسائر الكتب السماوية ويتبع مسالك الرسل العظام عليهم الصلاة والسلام.' \
+            -F 'text=This is an automated English voice cloning test for Echo Voice.' \
+            -F 'language=en' \
+            -F 'consent_confirmed=true' \
+            -F 'speed=1.0' \
+            http://127.0.0.1:8001/v1/clone --output "$RUNNER_TEMP/generated-en.wav"
+          grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-headers-en.txt"
+          grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers-en.txt"
+          python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"Generated English WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated-en.wav"
+      - name: Run real mixed Arabic-English voice-cloning inference
+        env:
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --max-time 2400 --dump-header "$RUNNER_TEMP/response-headers-mixed.txt" \
+            -H "X-Worker-Token: $WORKER_API_TOKEN" \
+            -F "reference_audio=@$RUNNER_TEMP/reference.wav;type=audio/wav" \
+            -F 'reference_text=ويدقق النظر في القرآن الكريم وسائر الكتب السماوية ويتبع مسالك الرسل العظام عليهم الصلاة والسلام.' \
+            -F 'text=هذا اختبار voice cloning للنص العربي والإنجليزي في Echo Voice.' \
+            -F 'language=ar-en' \
+            -F 'consent_confirmed=true' \
+            -F 'speed=1.0' \
+            http://127.0.0.1:8001/v1/clone --output "$RUNNER_TEMP/generated-mixed.wav"
+          grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-headers-mixed.txt"
+          grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers-mixed.txt"
+          python -c 'import sys,wave; a=wave.open(sys.argv[1], "rb"); d=a.getnframes()/a.getframerate(); print(f"Generated mixed WAV duration: {d:.2f}s"); assert d > 0.1' "$RUNNER_TEMP/generated-mixed.wav"
       - name: Show worker logs if model loading or inference fails
         if: failure()
         run: docker logs echo-voice-worker || true
