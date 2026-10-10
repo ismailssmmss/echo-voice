@@ -20,7 +20,7 @@ The APK is the Android client; the SILMA model runs in the separate AI-worker co
 
 API docs are at `http://127.0.0.1:8000/docs`. Backend health is `http://127.0.0.1:8000/api/v1/health`; worker health is `http://127.0.0.1:8001/health`. The worker is an internal service and must not be exposed directly. Model inference runs on the server, not inside the APK.
 
-The AI worker uses SILMA TTS v1. Its source code is MIT-licensed and the model weights are Apache-2.0 according to the [upstream project](https://github.com/SILMA-AI/silma-tts); retain notices and verify all third-party dependency terms. The current synchronous endpoint has no durable job queue, server-side output library, public hosting, or production protections such as rate limiting and admin RBAC. Do not expose the development stack to the public internet.
+The AI worker uses SILMA TTS v1. Its source code is MIT-licensed and the model weights are Apache-2.0 according to the [upstream project](https://github.com/SILMA-AI/silma-tts); retain notices and verify all third-party dependency terms. The Arabic model-inference smoke test has passed in GitHub Actions; this verifies a real generated WAV, not quality or latency guarantees. English and mixed Arabic-English inference are being added to the full-model CI check. The current synchronous endpoint has no durable job queue, server-side output library, public hosting, or production protections such as rate limiting and admin RBAC. Do not expose the development stack to the public internet.
 
 ## Security and deployment
 
