@@ -1,23 +1,24 @@
 # Echo Voice implementation status
 
-This file records verified repository work and intentionally distinguishes scaffolding from production-complete functionality.
+## Completed in repository
+- Added FastAPI health and readiness endpoints.
+- Added a consent-confirmation field and basic request validation for voice-job scaffolding.
+- Added starter tests for health, missing consent, and missing generation text.
+- Connected the voice-model list endpoint and removed its implicit fallback that presented unevaluated candidates as active.
+- Replaced wildcard CORS with a development-origin allowlist configurable by `CORS_ORIGINS`.
+- Removed a built-in default signing secret and changed `.env.example` / Compose defaults to avoid hardcoded database passwords and public port bindings.
+- Updated README setup notes and added model evaluation and security release gates.
 
-## Added in this implementation pass
-- Basic health/readiness API endpoints.
-- A documented voice-job request schema with explicit consent confirmation and basic validation.
-- Starter API tests for health, missing consent, and missing generation text.
+## Not production complete
+- Voice-job creation returns a scaffold response only; it does not persist jobs, dispatch Celery tasks, or invoke inference.
+- Job retrieval, signed object-storage upload, account enforcement on the job routes, Google Play Billing verification, AdMob integration, and admin authorization remain incomplete.
+- Model license/quality/performance benchmarks have not been run.
+- No APK/AAB, container build, or CI test result was produced in this GitHub update.
 
-## Important limitations
-- Voice-job creation is a scaffold response only: it does **not** enqueue Celery work or persist a job.
-- Job retrieval intentionally returns 404 because no job repository is connected.
-- The current API still requires authentication, ownership authorization, database persistence, signed upload URLs, rate limiting, abuse review, and audit logging before real uploads or model work can be enabled.
-- No audio cloning or text-to-speech inference is implemented by these API endpoints.
-- This pass has not run CI, Android Gradle, Docker builds, or GPU/model evaluation. Do not describe the app as production-ready or an installable APK.
-
-## Next engineering steps
-1. Add database migrations and persisted users, consent records, assets, and job state.
-2. Integrate authentication and enforce owner checks on every resource.
-3. Add private object storage with short-lived signed URLs.
-4. Dispatch persisted jobs through Celery with idempotency and retry policy.
-5. Evaluate model licenses/availability and benchmark models with consented datasets.
-6. Configure CI to run pytest, type checks, dependency scanning, Gradle checks, and web builds.
+## Next priorities
+1. Fix and test existing database model/runtime issues; add Alembic migrations.
+2. Implement auth dependencies and ownership checks on project, model, asset, and job resources.
+3. Implement durable job states and Celery idempotency/retry handling.
+4. Integrate private S3-compatible storage with signed URLs and deletion lifecycle.
+5. Add voice consent records and abuse monitoring end-to-end.
+6. Add reproducible CI and run backend, web, Android, security, and model evaluation suites.
