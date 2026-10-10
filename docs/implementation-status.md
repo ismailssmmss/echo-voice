@@ -1,24 +1,29 @@
 # Echo Voice implementation status
 
-## Completed in repository
-- Added FastAPI health and readiness endpoints.
-- Added a consent-confirmation field and basic request validation for voice-job scaffolding.
-- Added starter tests for health, missing consent, and missing generation text.
-- Connected the voice-model list endpoint and removed its implicit fallback that presented unevaluated candidates as active.
-- Replaced wildcard CORS with a development-origin allowlist configurable by `CORS_ORIGINS`.
-- Removed a built-in default signing secret and changed `.env.example` / Compose defaults to avoid hardcoded database passwords and public port bindings.
-- Updated README setup notes and added model evaluation and security release gates.
+## Implemented and verified in repository
+- FastAPI health endpoint and request-scoped database sessions.
+- Email/password registration and login with signed bearer access tokens; a strong `SECRET_KEY` of at least 32 characters is required to issue tokens.
+- `/auth/me` and project endpoints derive identity from the verified bearer token; callers cannot select another user's ID to access projects.
+- Voice-job endpoints require authentication, validate consent and request fields, and fail closed with HTTP 503 rather than returning a fake queued job while inference and durable processing are unavailable.
+- Voice-model endpoint lists only database-configured models marked active.
+- CORS uses an explicit configurable origin allowlist rather than wildcard origins.
+- Admin dashboard no longer displays fabricated user/job/GPU metrics.
+- GitHub Actions backend tests passed before the latest auth changes; a new test run is in progress.
+- Android debug APK build passed on commit `95cb801a958191d78068649b2ed09cafb7626428`; UI preview release `preview-12` is available from GitHub Releases.
 
 ## Not production complete
-- Voice-job creation returns a scaffold response only; it does not persist jobs, dispatch Celery tasks, or invoke inference.
-- Job retrieval, signed object-storage upload, account enforcement on the job routes, Google Play Billing verification, AdMob integration, and admin authorization remain incomplete.
-- Model license/quality/performance benchmarks have not been run.
-- No APK/AAB, container build, or CI test result was produced in this GitHub update.
+- No real voice cloning or TTS inference is integrated. The worker exposes health endpoints only.
+- Voice assets are not uploaded to private object storage; audio ownership, duration validation, retention and deletion are not wired end-to-end.
+- Voice jobs are not persisted, queued, or executed.
+- Google OAuth, account recovery, rate limits, abuse reporting workflows, production admin RBAC, Google Play Billing verification, and AdMob are not complete.
+- Model license and voice-quality/performance benchmarks have not been run.
+- The APK is debug-signed for preview. No production signing configuration, Android device matrix, privacy review, or Play Store submission is complete.
 
-## Next priorities
-1. Fix and test existing database model/runtime issues; add Alembic migrations.
-2. Implement auth dependencies and ownership checks on project, model, asset, and job resources.
-3. Implement durable job states and Celery idempotency/retry handling.
-4. Integrate private S3-compatible storage with signed URLs and deletion lifecycle.
-5. Add voice consent records and abuse monitoring end-to-end.
-6. Add reproducible CI and run backend, web, Android, security, and model evaluation suites.
+## Next release gates
+1. Complete CI for bearer-token authentication and project-ownership tests.
+2. Integrate and benchmark a legally approved voice model behind an isolated worker, including model download/license tracking and inference timeout/resource limits.
+3. Implement private object storage, signed upload/download URLs, audio consent records, deletion lifecycle and malware/file validation.
+4. Implement durable job states, queue dispatch, retries, cancellation and user-scoped job reads.
+5. Add API rate limiting, account recovery, moderation reports, audit logs and authenticated admin roles.
+6. Verify billing server-side, complete privacy disclosures and test on real Android devices.
+7. Configure production signing secrets and publish an Android App Bundle only after the release gates pass.
