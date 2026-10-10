@@ -74,7 +74,7 @@ else {
     Set-EnvValue "ECHO_BIND_HOST" "127.0.0.1"
 }
 
-Set-Content -LiteralPath $envPath -Value $script:envLines -Encoding utf8
+[System.IO.File]::WriteAllLines($envPath, [string[]]$script:envLines, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Building and starting Echo Voice services. The first build can be large."
 & docker compose --env-file ".env" up --build -d
