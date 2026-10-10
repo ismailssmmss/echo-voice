@@ -1,4 +1,4 @@
-name: AI worker image build
+name: AI worker image build and smoke test
 
 on:
   push:
@@ -20,16 +20,61 @@ permissions:
 jobs:
   build-worker-image:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Build inference worker image without publishing
+      - name: Build and load inference worker image
         uses: docker/build-push-action@v6
         with:
           context: ./ai-worker
           file: ./ai-worker/Dockerfile
           push: false
+          load: true
           tags: echo-voice-ai-worker:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Start worker with a temporary test token
+        env:
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+        run: |
+          mkdir -p "$RUNNER_TEMP/model-cache"
+          docker run -d --name echo-voice-worker \
+            -p 127.0.0.1:8001:8001 \
+            -e WORKER_API_TOKEN="$WORKER_API_TOKEN" \
+            -e HF_HOME=/models/huggingface \
+            -e MODEL_CACHE_DIR=/models/huggingface \
+            -v "$RUNNER_TEMP/model-cache:/models" \
+            echo-voice-ai-worker:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8001/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs echo-voice-worker
+          exit 1
+      - name: Download official SILMA reference sample
+        run: curl --fail --location --retry 3 --output "$RUNNER_TEMP/reference.wav" https://raw.githubusercontent.com/SILMA-AI/silma-tts/main/src/silma_tts/infer/ref_audio_samples/ar.ref.24k.wav
+      - name: Run real Arabic voice-cloning inference
+        env:
+          WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --max-time 2400 --dump-header "$RUNNER_TEMP/response-headers.txt" \
+            -H "X-Worker-Token: $WORKER_API_TOKEN" \
+            -F "reference_audio=@$RUNNER_TEMP/reference.wav;type=audio/wav" \
+            -F 'reference_text=ويدقق النظر في القرآن الكريم وسائر الكتب السماوية ويتبع مسالك الرسل العظام عليهم الصلاة والسلام.' \
+            -F 'text=هذا اختبار آلي لمحرك استنساخ الصوت في تطبيق إيكو فويس.' \
+            -F 'language=ar' \
+            -F 'consent_confirmed=true' \
+            -F 'speed=1.0' \
+            http://127.0.0.1:8001/v1/clone --output "$RUNNER_TEMP/generated.wav"
+          grep -qi '^X-AI-Generated: true' "$RUNNER_TEMP/response-headers.txt"
+          grep -qi '^X-Voice-Model: silma-tts-v1' "$RUNNER_TEMP/response-headers.txt"
+          test -s "$RUNNER_TEMP/generated.wav"
+          ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$RUNNER_TEMP/generated.wav"
+      - name: Show worker logs if model loading or inference fails
+        if: failure()
+        run: docker logs echo-voice-worker || true
+      - name: Remove worker container
+        if: always()
+        run: docker rm -f echo-voice-worker || true
