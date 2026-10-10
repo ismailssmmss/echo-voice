@@ -1,0 +1,45 @@
+name: Publish Android preview
+
+on:
+  workflow_run:
+    workflows: ["Android APK build"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish-preview:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK from successful build
+        uses: actions/download-artifact@v4
+        with:
+          name: echo-voice-debug-apk
+          path: release-assets
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Create prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## Echo Voice — Android UI preview
+
+          This is a debug-signed preview build for interface review only.
+
+          **Not a production voice-cloning release.** This build does not provide connected voice-cloning inference, secure account authorization, cloud audio storage, billing, or production abuse controls. Do not upload sensitive voice recordings or use it for production.
+
+          Build and source commit are linked to the originating GitHub Actions run.
+          EOF
+          gh release create "preview-${RUN_NUMBER}" release-assets/*.apk \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${HEAD_SHA}" \
+            --prerelease \
+            --title "Echo Voice UI Preview ${RUN_NUMBER}" \
+            --notes-file release-notes.md
