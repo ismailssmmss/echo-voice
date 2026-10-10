@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg libsndfile1 libgomp1 ca-certificates \
+      ffmpeg libsndfile1 libgomp1 ca-certificates build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /models/huggingface /models/cache
 
