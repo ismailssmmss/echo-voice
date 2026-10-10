@@ -16,13 +16,9 @@ class JobKind(str, Enum):
     generate_speech = "generate_speech"
 
 
-class JobStatus(str, Enum):
-    queued = "Queued"
-
-
 class CreateJobRequest(BaseModel):
     kind: JobKind
-    consent_confirmed: bool = Field(description="The requester confirms they own this voice or have explicit permission.")
+    consent_confirmed: bool = Field(description="Confirms the requester owns the voice or has explicit permission.")
     language: str = Field(min_length=2, max_length=32)
     input_asset_id: str | None = Field(default=None, max_length=128)
     text: str | None = Field(default=None, max_length=20000)
@@ -45,18 +41,18 @@ def create_job(payload: CreateJobRequest) -> JobResponse:
     if payload.kind != JobKind.generate_speech and not payload.input_asset_id:
         raise HTTPException(status_code=400, detail="input_asset_id is required for audio jobs.")
 
-    # MVP scaffold only: this endpoint deliberately does not enqueue work yet.
-    # Replace with authenticated, persisted Celery dispatch before production use.
+    # Scaffold only: no database persistence, authentication, ownership checks,
+    # queue dispatch, or model inference is connected here yet.
     return JobResponse(
         job_id=str(uuid4()),
         kind=payload.kind,
         status="Queued",
         created_at=datetime.now(timezone.utc),
-        message="Accepted as a scaffold request only; background processing is not connected yet.",
+        message="Scaffold request only; background processing is not connected yet.",
     )
 
 
 @router.get("/{job_id}")
 def get_job(job_id: str) -> dict[str, str]:
-    # No persistence exists yet, so avoid pretending the job can be retrieved.
-    raise HTTPException(status_code=404, detail=f"Job '{job_id}' is not persisted. Job storage is not implemented yet.")
+    # Intentionally does not imply jobs are stored or retrievable yet.
+    raise HTTPException(status_code=404, detail=f"Job '{job_id}' is not persisted; job storage is not implemented.")
