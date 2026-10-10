@@ -2,7 +2,7 @@
 Android-first AI voice cloning platform scaffolding.
 
 ## Status
-This repository is an engineering scaffold, not a production-ready service. Model inference, persisted job processing, account authorization, billing verification, signed object storage uploads, and a production admin console are not yet complete. Do not upload real voice recordings or enable payments until the security gates in `docs/security-release-gate.md` have been met.
+This repository is an engineering scaffold, not a production-ready service. Model inference, persisted job processing, signed object storage uploads, billing verification, and production admin authorization are not yet complete. Email/password authentication now issues signed bearer tokens and project endpoints enforce token-based ownership. Do not upload real voice recordings or enable payments until the security gates in `docs/security-release-gate.md` have been met.
 
 ## Architecture
 - `android/`: Kotlin and Jetpack Compose client
@@ -26,11 +26,11 @@ This repository is an engineering scaffold, not a production-ready service. Mode
 4. API docs are at `http://127.0.0.1:8000/docs`.
 
 ## Important safety and deployment notes
-- Voice jobs currently demonstrate request validation only; they do not run AI inference or persist work.
+- Voice-job endpoints require authentication and validate consent/input, but fail closed with HTTP 503 until the AI worker, durable queue, and job persistence are deployed. They do not claim a job was queued.
 - Use explicit consent and only voices you own or have documented permission to use.
 - Never commit secrets, voice recordings, private model weights, signing keys, or payment data.
 - Verify current licenses for the exact code and model weights before commercial deployment.
-- Run tests in the backend environment with `pytest`. Build status has not been verified by this repository update.
+- Run tests in the backend environment with `pytest`. GitHub Actions currently builds a debug APK for UI review; it is not a signed production release.
 - Use private object storage, short-lived signed URLs, authentication, ownership authorization, quotas, rate limiting, idempotent credit accounting and audit logging before public deployment.
 
 See `docs/implementation-status.md`, `docs/model-evaluation.md`, and `docs/security-release-gate.md`.
