@@ -150,7 +150,9 @@ private fun PageColumn(content: @Composable androidx.compose.foundation.layout.C
 
 @Composable
 private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
-    var email by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var apiBaseUrl by remember { mutableStateOf(EchoVoiceApi.getApiBaseUrl(context)) }
+    var email by remember { mutableStateOf("")
     var password by remember { mutableStateOf("") }
     var createAccount by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
@@ -166,7 +168,30 @@ private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
             Text("Echo Voice", style = MaterialTheme.typography.headlineLarge, color = EchoText)
             Spacer(Modifier.height(8.dp))
             Text("استنساخ الصوت وتوليد الكلام", color = EchoMuted)
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = apiBaseUrl,
+                onValueChange = { apiBaseUrl = it.take(512) },
+                label = { Text("عنوان خادم API") },
+                placeholder = { Text("https://your-server.example/api/v1") },
+                supportingText = {
+                    Text(
+                        "المحاكي: http://10.0.2.2:8000/api/v1. للهاتف الحقيقي استخدم IP الخادم على شبكة Wi-Fi أو عنوان HTTPS.",
+                        color = EchoMuted,
+                    )
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedButton(
+                enabled = !busy,
+                onClick = {
+                    val error = EchoVoiceApi.saveApiBaseUrl(context, apiBaseUrl)
+                    message = error ?: "تم حفظ عنوان الخادم. استخدم زر تسجيل الدخول لفحص الاتصال."
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("حفظ عنوان الخادم") }
+            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -189,7 +214,9 @@ private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
                         busy = true
                         message = if (createAccount) "جارٍ إنشاء الحساب..." else "جارٍ تسجيل الدخول..."
                         try {
-                            val result = EchoVoiceApi.authenticate(email, password, createAccount)
+                            val configError = EchoVoiceApi.saveApiBaseUrl(context, apiBaseUrl)
+                            if (configError != null) throw IllegalArgumentException(configError)
+                            val result = EchoVoiceApi.authenticate(context, email, password, createAccount)
                             onAuthenticated(result)
                         } catch (error: Exception) {
                             message = error.message ?: "تعذر الاتصال بالخادم."
