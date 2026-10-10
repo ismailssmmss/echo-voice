@@ -41,7 +41,8 @@ services:
       WORKER_API_TOKEN: ${WORKER_API_TOKEN:-local-only-worker-token-change-before-production-2026}
       WORKER_TIMEOUT_SECONDS: ${WORKER_TIMEOUT_SECONDS:-1800}
     ports:
-      - "127.0.0.1:8000:8000"
+      # Local-only by default. Set ECHO_BIND_HOST=0.0.0.0 in .env for a trusted LAN test device.
+      - "${ECHO_BIND_HOST:-127.0.0.1}:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
