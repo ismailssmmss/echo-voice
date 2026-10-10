@@ -1,17 +1,6 @@
-from pydantic import BaseModel
+from __future__ import annotations
 
+import os
 
-class GenerationRequest(BaseModel):
-    text: str
-    voice_model_id: str
-    output_format: str = "mp3"
-
-
-class GenerationResult(BaseModel):
-    job_id: str
-    status: str
-    output_path: str | None = None
-
-
-def create_generation_request(text: str, voice_model_id: str) -> GenerationRequest:
-    return GenerationRequest(text=text, voice_model_id=voice_model_id)
+DEFAULT_PROVIDER = os.getenv("VOICE_MODEL_PROVIDER", "OpenVoice")
+DEFAULT_MODEL = os.getenv("MODEL_DEFAULT", "openvoice-v2")
