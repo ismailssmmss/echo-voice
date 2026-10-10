@@ -1,0 +1,30 @@
+name: Windows launcher syntax check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "start-echo-voice.ps1"
+      - ".github/workflows/windows-launcher-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "start-echo-voice.ps1"
+      - ".github/workflows/windows-launcher-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell launcher without running Docker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = Get-Content -LiteralPath ".\start-echo-voice.ps1" -Raw
+          [void][scriptblock]::Create($source)
+          Write-Host "PowerShell launcher syntax is valid."
