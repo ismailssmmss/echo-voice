@@ -22,6 +22,8 @@ class AuthResponse(BaseModel):
 
     user_id: int
     email: str
+    access_token: str
+    token_type: str = "bearer"
     message: str
 
 
