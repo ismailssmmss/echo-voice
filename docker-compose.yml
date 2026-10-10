@@ -37,6 +37,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-echo_dev}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-echo_voice}
       REDIS_URL: redis://redis:6379/0
+      WORKER_URL: http://ai-worker:8001
+      WORKER_API_TOKEN: ${WORKER_API_TOKEN:-local-only-worker-token-change-before-production-2026}
+      WORKER_TIMEOUT_SECONDS: ${WORKER_TIMEOUT_SECONDS:-900}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -44,6 +47,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ai-worker:
+        condition: service_started
     volumes:
       - ./backend:/app
 
@@ -55,12 +60,22 @@ services:
     env_file:
       - .env
     environment:
-      REDIS_URL: redis://redis:6379/0
-    depends_on:
-      redis:
-        condition: service_healthy
+      WORKER_API_TOKEN: ${WORKER_API_TOKEN:-local-only-worker-token-change-before-production-2026}
+      HF_HOME: /models/huggingface
+      XDG_CACHE_HOME: /models/cache
+      MODEL_CACHE_DIR: /models/huggingface
+      MAX_REFERENCE_AUDIO_BYTES: "26214400"
+    ports:
+      - "127.0.0.1:8001:8001"
     volumes:
       - ./ai-worker:/app
+      - model_cache:/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
 
   admin-web:
     build:
@@ -76,3 +91,4 @@ services:
 
 volumes:
   postgres_data:
+  model_cache:
