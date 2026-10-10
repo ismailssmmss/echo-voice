@@ -1,1 +1,1 @@
-"""Schemas package marker."""
+"""Schemas package."""
