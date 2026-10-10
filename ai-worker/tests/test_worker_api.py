@@ -5,6 +5,7 @@ import wave
 
 from fastapi.testclient import TestClient
 
+from app import main as worker_main
 from app.main import app
 from app.runtime import runtime
 
@@ -77,6 +78,21 @@ def test_inference_rejects_unsupported_language(monkeypatch) -> None:
     )
     assert response.status_code == 422
 
+
+def test_concurrent_inference_is_rejected(monkeypatch) -> None:
+    monkeypatch.setenv("WORKER_API_TOKEN", TEST_TOKEN)
+    assert worker_main.INFERENCE_SLOT.acquire(blocking=False)
+    try:
+        response = client.post(
+            "/v1/clone",
+            headers={"X-Worker-Token": TEST_TOKEN},
+            files={"reference_audio": ("reference.wav", wav_bytes(5.0), "audio/wav")},
+            data=form_data(),
+        )
+        assert response.status_code == 429
+        assert response.headers["retry-after"] == "30"
+    finally:
+        worker_main.INFERENCE_SLOT.release()
 
 def test_inference_normalizes_audio_calls_runtime_and_labels_result(monkeypatch) -> None:
     monkeypatch.setenv("WORKER_API_TOKEN", TEST_TOKEN)
