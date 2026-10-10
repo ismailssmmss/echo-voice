@@ -24,8 +24,8 @@ object EchoVoiceApi {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(120, TimeUnit.SECONDS)
-        .readTimeout(16, TimeUnit.MINUTES)
-        .callTimeout(18, TimeUnit.MINUTES)
+        .readTimeout(32, TimeUnit.MINUTES)
+        .callTimeout(34, TimeUnit.MINUTES)
         .retryOnConnectionFailure(true)
         .build()
 
