@@ -1,36 +1,29 @@
 # Echo Voice
-Android-first AI voice cloning platform scaffolding.
 
-## Status
-This repository is an engineering scaffold, not a production-ready service. Model inference, persisted job processing, signed object storage uploads, billing verification, and production admin authorization are not yet complete. Email/password authentication now issues signed bearer tokens and project endpoints enforce token-based ownership. Do not upload real voice recordings or enable payments until the security gates in `docs/security-release-gate.md` have been met.
+Android-first voice-cloning and text-to-speech project with a FastAPI backend, isolated AI inference worker, admin readiness page, and Docker Compose development stack.
 
-## Architecture
-- `android/`: Kotlin and Jetpack Compose client
-- `backend/`: FastAPI API and orchestration
-- `ai-worker/`: isolated audio-processing service
-- `admin-web/`: React + TypeScript dashboard
-- `docs/`: architecture, evaluation and release criteria
+## Current working voice engine
+
+The AI worker is integrated with **SILMA TTS v1** for zero-shot voice cloning and speech synthesis in Arabic, English, and mixed Arabic-English text. It accepts a short reference recording plus its transcription, normalizes the recording, produces WAV audio, labels the output as AI-generated, and deletes temporary source/output files after returning the response. Code and model weights have distinct licensing terms; review the current upstream terms before redistributing the model.
+
+The authenticated API endpoint is `POST /api/v1/voice-jobs/clone` (multipart form). It requires a bearer access token and explicit voice-owner consent. The reference text must match the first eight seconds of the reference recording. Uploads are limited to 25 MB and 3–120 seconds; output text is limited to 5000 characters. Other languages are rejected until a tested engine for them is added.
 
 ## Local development
-1. Copy `.env.example` to `.env`, then replace every development value with local-only values.
-2. Start local dependencies with `docker compose up -d postgres redis`.
-3. Start the backend:
-   ```bash
-   cd backend
-   python -m venv .venv
-   # Windows: .venv\\Scripts\\activate
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-   ```
-4. API docs are at `http://127.0.0.1:8000/docs`.
 
-## Important safety and deployment notes
-- Voice-job endpoints require authentication and validate consent/input, but fail closed with HTTP 503 until the AI worker, durable queue, and job persistence are deployed. They do not claim a job was queued.
-- Use explicit consent and only voices you own or have documented permission to use.
-- Never commit secrets, voice recordings, private model weights, signing keys, or payment data.
-- Verify current licenses for the exact code and model weights before commercial deployment.
-- Run tests in the backend environment with `pytest`. GitHub Actions currently builds a debug APK for UI review; it is not a signed production release.
-- Use private object storage, short-lived signed URLs, authentication, ownership authorization, quotas, rate limiting, idempotent credit accounting and audit logging before public deployment.
+1. Copy `.env.example` to `.env` and replace the development PostgreSQL password and secrets.
+2. Start all services using `docker compose up --build`. The first inference downloads the SILMA model and vocoder into the persistent `model_cache` volume and may take several minutes.
+3. Register/login at the API and use `POST http://127.0.0.1:8000/api/v1/voice-jobs/clone` with a bearer token.
+4. API docs are at `http://127.0.0.1:8000/docs`; worker health is at `http://127.0.0.1:8001/health`.
 
-See `docs/implementation-status.md`, `docs/model-evaluation.md`, and `docs/security-release-gate.md`.
+The Android emulator's default API URL is `http://10.0.2.2:8000/api/v1`. For a device or remote deployment, set the Gradle property `-PapiBaseUrl=https://your-api.example/api/v1` and use HTTPS.
+
+## Security and deployment
+
+- Never commit credentials or use the values in `.env.example` outside local development.
+- Voice jobs require explicit consent. Only clone voices you own or have explicit documented permission to use.
+- Audio is not written to permanent cloud storage by the current synchronous endpoint; the returned generated audio is stored locally by the Android client if the user keeps it.
+- The worker is private to the Docker network and requires a service token. Do not expose it to the public internet.
+- Durable asynchronous jobs, private cloud audio storage, account recovery/email verification, per-user rate limiting, admin RBAC, verified billing, and ad integration are not yet complete.
+- The APK is still a debug-signed preview. Production signing, device testing, privacy and store review, and Google Play publication have not been completed.
+
+See `ai-worker/README.md`, `docs/implementation-status.md`, and `docs/security-release-gate.md`.
