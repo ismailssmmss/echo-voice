@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import threading
 from pathlib import Path
@@ -30,6 +31,7 @@ class SilmaRuntime:
         with self._lock:
             if self.model is not None:
                 return self.model
+
             try:
                 import torch
                 from silma_tts.api import SilmaTTS
@@ -50,6 +52,22 @@ class SilmaRuntime:
                 ) from exc
             return self.model
 
+    @staticmethod
+    def _clear_reference_cache(audio_hash: str, source_audio: Path) -> None:
+        """Remove SILMA's own temporary, preprocessed reference clip after each request."""
+        try:
+            from silma_tts.infer import utils_infer
+
+            cached_audio = utils_infer._ref_audio_cache.pop(audio_hash, None)
+            utils_infer._ref_text_cache.pop(audio_hash, None)
+            if cached_audio:
+                cached_path = Path(cached_audio)
+                if cached_path.resolve() != source_audio.resolve():
+                    cached_path.unlink(missing_ok=True)
+        except Exception:
+            # Best effort cleanup must not mask the original inference error.
+            pass
+
     def generate(
         self,
         reference_audio: Path,
@@ -69,6 +87,9 @@ class SilmaRuntime:
         if not 0.75 <= speed <= 1.25:
             raise ValueError("Speed must be between 0.75 and 1.25.")
 
+        # SILMA internally uses the MD5 of the supplied clip as its in-process cache key.
+        # Clear that entry afterwards so reference audio isn't retained in a global cache.
+        audio_hash = hashlib.md5(reference_audio.read_bytes()).hexdigest()
         with self._lock:
             model = self.load()
             try:
@@ -85,6 +106,8 @@ class SilmaRuntime:
                 raise RuntimeError(
                     "Speech generation failed. Verify the reference transcription and available memory, then retry."
                 ) from exc
+            finally:
+                self._clear_reference_cache(audio_hash, reference_audio)
 
         if not output_path.is_file() or output_path.stat().st_size < 1024:
             raise RuntimeError("The model completed without producing a valid audio file.")
