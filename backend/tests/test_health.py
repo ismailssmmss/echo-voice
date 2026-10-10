@@ -19,4 +19,4 @@ def test_health_endpoint() -> None:
 def test_auth_register() -> None:
     payload = {"email": "health-user@example.com", "password": "password123"}
     response = client.post("/api/v1/auth/register", json=payload)
-    assert response.status_code == 200
+    assert response.status_code == 201
