@@ -10,16 +10,9 @@ router = APIRouter()
 
 
 @router.get("")
-def list_voice_models(db: Session = Depends(get_db)) -> dict[str, list[dict[str, str | int | float]]]:
+def list_voice_models(db: Session = Depends(get_db)) -> dict[str, list[dict[str, str | int | float | None]]]:
+    """List configured models only; candidates are not presented as enabled by default."""
     models = db.query(VoiceModel).filter(VoiceModel.status == "active").all()
-    if not models:
-        return {
-            "models": [
-                {"id": 1, "name": "OpenVoice V2", "provider": "OpenVoice", "status": "active", "language": "en"},
-                {"id": 2, "name": "XTTS-v2", "provider": "Coqui", "status": "active", "language": "multi"},
-            ]
-        }
-
     return {
         "models": [
             {
