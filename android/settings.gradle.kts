@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "echo-voice"
+include(":app")
