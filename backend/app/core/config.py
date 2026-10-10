@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     secret_key: str = ""
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+    # Internal service-to-service connection for the isolated voice inference worker.
+    worker_url: str = "http://ai-worker:8001"
+    worker_api_token: str = ""
+    worker_timeout_seconds: int = 900
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
