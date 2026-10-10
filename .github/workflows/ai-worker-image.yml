@@ -54,6 +54,10 @@ jobs:
           exit 1
       - name: Download official SILMA reference sample
         run: curl --fail --location --retry 3 --output "$RUNNER_TEMP/reference.wav" https://raw.githubusercontent.com/SILMA-AI/silma-tts/main/src/silma_tts/infer/ref_audio_samples/ar.ref.24k.wav
+      - name: Install FFmpeg for output validation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
       - name: Run real Arabic voice-cloning inference
         env:
           WORKER_API_TOKEN: echo-voice-ci-token-not-for-production-0123456789
