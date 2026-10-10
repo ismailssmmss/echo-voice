@@ -184,13 +184,28 @@ private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedButton(
-                enabled = !busy,
+                enabled = !busy && !checkingBackend,
                 onClick = {
                     val error = EchoVoiceApi.saveApiBaseUrl(context, apiBaseUrl)
-                    message = error ?: "تم حفظ عنوان الخادم. استخدم زر تسجيل الدخول لفحص الاتصال."
+                    if (error != null) {
+                        message = error
+                    } else {
+                        scope.launch {
+                            checkingBackend = true
+                            message = "جارٍ فحص اتصال الخادم..."
+                            try {
+                                EchoVoiceApi.checkBackend(context)
+                                message = "نجح الاتصال بواجهة Echo Voice API. أصبح بإمكانك تسجيل الدخول."
+                            } catch (failure: Exception) {
+                                message = failure.message ?: "تعذر الوصول إلى الخادم. تأكد أنه يعمل وأن الهاتف يستطيع الوصول إليه."
+                            } finally {
+                                checkingBackend = false
+                            }
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("حفظ عنوان الخادم") }
+            ) { Text(if (checkingBackend) "جارٍ الفحص..." else "حفظ العنوان وفحص الاتصال") }
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = email,
@@ -208,7 +223,7 @@ private fun AuthenticationScreen(onAuthenticated: (AuthSession) -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             )
             Button(
-                enabled = !busy && email.contains("@") && password.length >= 8,
+                enabled = !busy && !checkingBackend && email.contains("@") && password.length >= 8,
                 onClick = {
                     scope.launch {
                         busy = true
