@@ -1,4 +1,4 @@
-name: Android APK build and preview release
+name: Android APK and AAB preview release
 
 on:
   push:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 jobs:
-  debug-apk:
+  android-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,42 +28,53 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
-      - name: Build debug APK
+
+      - name: Build debug APK and release AAB
         working-directory: android
-        run: gradle assembleDebug --no-daemon
-      - name: Upload build artifact
+        run: gradle assembleDebug bundleRelease --no-daemon
+
+      - name: Verify Android outputs
+        run: |
+          set -euo pipefail
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          test -s android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload APK and AAB workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: echo-voice-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: echo-voice-android-preview
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
-          retention-days: 14
-      - name: Publish Android integration preview
+          retention-days: 30
+
+      - name: Publish Android preview release
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_NUMBER: ${{ github.run_number }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
           TAG="preview-${RUN_NUMBER}"
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
           test -s "$APK"
+          test -s "$AAB"
           cat > release-notes.md <<'EOF'
-          ## Echo Voice — Android integration preview
+          ## Echo Voice — Android engineering preview
 
-          This debug-signed APK includes the connected Android voice studio: registration/login, reference audio selection, Arabic/English text synthesis request, consent confirmation, WAV playback, and export.
+          - `app-debug.apk`: debug-signed APK for direct installation and testing.
+          - `app-release.aab`: unsigned release bundle output. It must be signed with a private release key before Google Play upload.
 
-          **A backend deployment is required.** The app does not include model weights or a hosted API. Configure the app API URL at build time with `-PapiBaseUrl=https://your-api.example/api/v1`, deploy the backend and private AI worker, and configure matching service secrets before making inference requests.
+          The app requires a separately deployed backend and AI worker; model weights and a hosted inference API are not bundled in the Android app. Configure the API endpoint at build time with `-PapiBaseUrl=https://your-api.example/api/v1`.
 
-          The AI worker integrates SILMA TTS v1 for Arabic, English, and mixed Arabic-English speech. The first inference downloads model dependencies and may take several minutes.
+          The AI worker integration uses SILMA TTS v1 for Arabic, English, and mixed Arabic-English speech. First inference may download model dependencies and take several minutes.
 
-          This is a debug-signed engineering preview, not a Google Play production release. Production signing, device verification, deployment hardening, storage/history, account recovery, billing, and Play Store review remain outstanding.
+          This is an engineering preview, not a production or Google Play release. Production signing, device verification, deployment hardening, and Play Store review remain outstanding.
           EOF
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            if ! gh release upload "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --clobber; then
-              echo "::warning::Release upload was denied by repository token permissions; the APK remains available as the workflow artifact."
-            fi
-          elif ! gh release create "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Echo Voice Integration Preview ${RUN_NUMBER}" --notes-file release-notes.md; then
-            echo "::warning::GitHub denied creation of a new Release for this workflow token. The APK remains available as the workflow artifact."
+            gh release upload "$TAG" "$APK" "$AAB" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$APK" "$AAB" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Echo Voice Android Preview ${RUN_NUMBER}" --notes-file release-notes.md
           fi
